@@ -5,8 +5,7 @@ import urllib.parse
 import msal
 
 from pyzehndercloud import OAUTH2_CLIENT_ID
-from pyzehndercloud.auth import (OAUTH2_AUTHORITY, OAUTH2_REDIRECT_URL,
-                                 OAUTH2_SECRET)
+from pyzehndercloud.auth import OAUTH2_AUTHORITY, OAUTH2_REDIRECT_URL
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -15,7 +14,6 @@ def run():
     # Create the msal app
     msal_app = msal.ConfidentialClientApplication(
         client_id=OAUTH2_CLIENT_ID,
-        client_credential=OAUTH2_SECRET,
         authority=OAUTH2_AUTHORITY,
         exclude_scopes=["profile"]
     )
@@ -30,6 +28,8 @@ def run():
     print("Enter the URL you were redirected to, but don't continue on that page:")
     url = input()
     query_params = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(url).query))
+    if 'client_info' in query_params and query_params.get('client_info') == '1':
+        del query_params['client_info']
     result = msal_app.acquire_token_by_auth_code_flow(flow, query_params) # , scopes=['df77b1ce-c368-4f7f-b0e6-c1406ac6bac9']
 
     if result.get("error"):

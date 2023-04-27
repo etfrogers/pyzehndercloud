@@ -2,15 +2,11 @@ import asyncio
 import json
 import logging
 import sys
-from time import time
 
 import aiohttp
-import jwt
-import msal
 from aiohttp import ClientSession
 
-from pyzehndercloud.auth import (OAUTH2_AUTHORITY, OAUTH2_CLIENT_ID,
-                                 OAUTH2_SECRET, OAUTH2_TOKEN_URL, AbstractAuth)
+from pyzehndercloud.auth import OAUTH2_CLIENT_ID, OAUTH2_TOKEN_URL, AbstractAuth
 from pyzehndercloud.zehndercloud import ZehnderCloud
 
 logging.basicConfig(level=logging.DEBUG)
@@ -42,7 +38,6 @@ class ExampleAuth(AbstractAuth):
         # Refresh token if it has expired
         form = {
             "client_id": OAUTH2_CLIENT_ID,
-            "client_secret": OAUTH2_SECRET,
             "scope": "openid profile offline_access",
             "grant_type": "refresh_token",
             "refresh_token": self._tokens.get("refresh_token"),
