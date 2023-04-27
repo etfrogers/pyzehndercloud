@@ -10,7 +10,8 @@ from pyzehndercloud.auth import AbstractAuth
 _LOGGER = logging.getLogger(__name__)
 
 API_ENDPOINT = "https://zehnder-prod-we-apim.azure-api.net/cloud/api/v2.1"
-API_KEY = "23d97a1ba1724a0fb750faf3d8a24f95"
+with open("api_key.json", "r") as f:
+    API_KEY = json.load(f)
 
 
 class DeviceDetails:
