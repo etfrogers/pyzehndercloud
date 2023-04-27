@@ -69,19 +69,19 @@ async def main():
         # Get device details
         device = await api.get_device_details(devices[0])
         print(device)
-
-        # Set ventilation speed to away
-        await api.set_device_settings(
-            devices[0], {"setVentilationPreset": {"value": 0}}
-        )
-
-        # Sleep 5 seconds
-        await asyncio.sleep(5)
-
-        # Set ventilation speed to low
-        await api.set_device_settings(
-            devices[0], {"setVentilationPreset": {"value": 1}}
-        )
+        pass
+        # # Set ventilation speed to away
+        # await api.set_device_settings(
+        #     devices[0], {"setVentilationPreset": {"value": 0}}
+        # )
+        #
+        # # Sleep 5 seconds
+        # await asyncio.sleep(5)
+        #
+        # # Set ventilation speed to low
+        # await api.set_device_settings(
+        #     devices[0], {"setVentilationPreset": {"value": 1}}
+        # )
 
 
 try:
