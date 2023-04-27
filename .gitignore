@@ -8,3 +8,5 @@ __pycache__
 
 # Other files
 .auth_token.json
+.auth_token.json.*
+api_key.json
