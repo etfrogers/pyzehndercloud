@@ -8,12 +8,10 @@ OAUTH2_AUTHORITY = f"https://{TENANT}.b2clogin.com/{TENANT}.onmicrosoft.com/{POL
 OAUTH2_AUTHORIZE_URL = f"{OAUTH2_AUTHORITY}/oauth2/v2.0/authorize"
 OAUTH2_TOKEN_URL = f"{OAUTH2_AUTHORITY}/oauth2/v2.0/token"
 
-OAUTH2_REDIRECT_URL = "http://localhost:5000"
-# OAUTH2_REDIRECT_URL = "https://my.home-assistant.io/redirect/oauth"
+OAUTH2_PORT = 5000
+OAUTH2_REDIRECT_URL = f"http://localhost:{OAUTH2_PORT}"
 
 OAUTH2_CLIENT_ID = 'df77b1ce-c368-4f7f-b0e6-c1406ac6bac9'  # Documentation
-# OAUTH2_CLIENT_ID = "76c86940-8437-4819-9449-8b7e2a372a07"  # Home Assistant
-# OAUTH2_SECRET = "9M38Q~L2M5IkV5LGuGUkKeg_b2jxzdOaaXwsjcfZ"
 
 
 class AuthError(Exception):

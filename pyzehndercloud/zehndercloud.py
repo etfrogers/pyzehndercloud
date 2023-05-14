@@ -16,6 +16,7 @@ with open("api_key.json", "r") as f:
 
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 
+
 class DeviceDetails:
     """Represents the state of a device."""
 

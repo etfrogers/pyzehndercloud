@@ -1,60 +1,78 @@
 import asyncio
-import json
+import atexit
 import logging
+import os
 import sys
 
 import aiohttp
+import msal
 from aiohttp import ClientSession
 
-from pyzehndercloud.auth import OAUTH2_CLIENT_ID, OAUTH2_TOKEN_URL, AbstractAuth
+from pyzehndercloud.auth import OAUTH2_CLIENT_ID, AbstractAuth, OAUTH2_AUTHORITY, OAUTH2_PORT
 from pyzehndercloud.zehndercloud import ZehnderCloud
 
 logging.basicConfig(level=logging.DEBUG)
 
-_LOGGER = logging.getLogger(__name__)
+
+config = {'zehnder': {'username': 'etfrogers@hotmail.com'}}
+logger = logging.getLogger('Zehnder')
 
 
-class ExampleAuth(AbstractAuth):
+class InteractiveAuth(AbstractAuth):
     """This is an example implementation of the AbstractAuth class."""
 
     def __init__(self, websession: ClientSession):
         super().__init__(websession)
-
-        # Load .auth_token.json
-        with open(".auth_token.json", "r") as f:
-            self._tokens = json.load(f)
-
-        if not self._tokens:
-            print(
-                "Please provide a valid auth_token.json file. You can create one by running example_authenticate.py."
-            )
-            sys.exit(1)
+        cache = msal.SerializableTokenCache()
+        if os.path.exists("my_cache.json"):
+            cache.deserialize(open("my_cache.json", "r").read())
+        atexit.register(lambda:
+                        open("my_cache.json", "w").write(cache.serialize())
+                        # Hint: The following optional line persists only when state changed
+                        if cache.has_state_changed else None
+                        )
+        self.app = msal.PublicClientApplication(
+            OAUTH2_CLIENT_ID, authority=OAUTH2_AUTHORITY,
+            exclude_scopes=["profile"],
+            token_cache=cache,
+        )
 
     async def async_get_access_token(self) -> str:
         """Returns a token that can be used to authenticate against the API.
         Note that this is an example, you probably want to cache the access_token, and only refresh it when it
         expires.
         """
-        # Refresh token if it has expired
-        form = {
-            "client_id": OAUTH2_CLIENT_ID,
-            "scope": "openid profile offline_access",
-            "grant_type": "refresh_token",
-            "refresh_token": self._tokens.get("refresh_token"),
-        }
-        async with self.websession.post(OAUTH2_TOKEN_URL, data=form) as response:
-            if response.status != 200:
-                error = await response.json()
-                raise Exception(error.get("error_description"))
+        accounts = self.app.get_accounts(username=config.get("username"))
+        result = None
+        if accounts:
+            logger.info("Account(s) exists in cache, probably with token too. Let's try.")
+            logger.info("Account(s) already signed in:")
+            for a in accounts:
+                logger.debug(a["username"])
+            chosen = accounts[0]  # Assuming the end user chose this one to proceed
+            logger.info("Proceed with account: %s" % chosen["username"])
+            # Now let's try to find a token in cache for this account
+            result = self.app.acquire_token_silent([OAUTH2_CLIENT_ID], account=chosen)
 
-            data = await response.json()
-            return data.get("id_token")
+        if not result:
+            result = self.app.acquire_token_interactive(
+                [OAUTH2_CLIENT_ID],
+                port=OAUTH2_PORT,
+                # login_hint=config.get("username"),  # Optional.
+                # If you know the username ahead of time, this parameter can pre-fill
+                # the username (or email address) field of the sign-in page for the user,
+                # Often, apps use this parameter during reauthentication,
+                # after already extracting the username from an earlier sign-in
+                # by using the preferred_username claim from returned id_token_claims.
+                timeout=30,
+            )
+        return result['id_token']
 
 
 async def main():
     async with aiohttp.ClientSession() as session:
         # Initialise ZehnderCloud API
-        api = ZehnderCloud(session, ExampleAuth(session))
+        api = ZehnderCloud(session, InteractiveAuth(session))
 
         # Get a list of all devices
         devices = await api.get_devices()
