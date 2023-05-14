@@ -2,12 +2,11 @@ import datetime
 import json
 import logging
 import socket
-import urllib.parse
 
 import msal
 
 from pyzehndercloud import OAUTH2_CLIENT_ID
-from pyzehndercloud.auth import OAUTH2_AUTHORITY, OAUTH2_REDIRECT_URL
+from pyzehndercloud.auth import OAUTH2_AUTHORITY
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
@@ -37,26 +36,28 @@ def listen_on_socket():
 
 def run():
     # Create the msal app
-    msal_app = msal.ConfidentialClientApplication(
+    msal_app = msal.PublicClientApplication(
         client_id=OAUTH2_CLIENT_ID,
         authority=OAUTH2_AUTHORITY,
         exclude_scopes=["profile"]
     )
 
-    # Initiate the auth flow
-    flow = msal_app.initiate_auth_code_flow(scopes=[OAUTH2_CLIENT_ID], redirect_uri=OAUTH2_REDIRECT_URL)
-    print("Navigate to the following URL in a browser:")
-    print(flow["auth_uri"])
-    print()
-
-    request_data = listen_on_socket()
-    request_str = request_data.decode("utf-8")
-    get, url, *tokens = request_str.split()
-
-    query_params = dict(urllib.parse.parse_qsl(urllib.parse.urlparse(url).query))
-    if 'client_info' in query_params and query_params.get('client_info') == '1':
-        del query_params['client_info']
-    result = msal_app.acquire_token_by_auth_code_flow(flow, query_params)
+    result = msal_app.acquire_token_interactive(
+        # Only works if your app is registered with redirect_uri as http://localhost
+        [OAUTH2_CLIENT_ID],
+        port=PORT,
+        # parent_window_handle=...,  # If broker is enabled, you will be guided to provide a window handle
+        # login_hint=config.get("username"),  # Optional.
+        # If you know the username ahead of time, this parameter can pre-fill
+        # the username (or email address) field of the sign-in page for the user,
+        # Often, apps use this parameter during reauthentication,
+        # after already extracting the username from an earlier sign-in
+        # by using the preferred_username claim from returned id_token_claims.
+        timeout=30,
+        # prompt=msal.Prompt.SELECT_ACCOUNT,  # Or simply "select_account". Optional. It forces to show account selector page
+        # prompt=msal.Prompt.CREATE,  # Or simply "create". Optional. It brings user to a self-service sign-up flow.
+        # Prerequisite: https://docs.microsoft.com/en-us/azure/active-directory/external-identities/self-service-sign-up-user-flow
+    )
 
     if result.get("error"):
         print(
