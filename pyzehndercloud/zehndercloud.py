@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 
@@ -13,6 +14,7 @@ API_ENDPOINT = "https://zehnder-prod-we-apim.azure-api.net/cloud/api/v2.1"
 with open("api_key.json", "r") as f:
     API_KEY = json.load(f)
 
+TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 
 class DeviceDetails:
     """Represents the state of a device."""
@@ -83,7 +85,7 @@ class ZehnderCloud:
         Works for all devices like Radiators, Comfosys or non-zehnder (external) devices."""
         result = await self.make_request(
             "GET",
-            API_ENDPOINT + "/devices/{device_id}/state".format(device_id=device_id),
+            API_ENDPOINT + f"/devices/{device_id}/state"
         )
 
         return DeviceState(result)
@@ -104,13 +106,22 @@ class ZehnderCloud:
         self,
         device_id: str,
         valuename: str,
-        time_from: str,
-        time_to: str,
-        time_interval: int,
+        time_from: datetime.datetime = None,
+        time_to: datetime.datetime = datetime.datetime.now(),
+        time_interval: str = None,
     ):
+        if time_from is None:
+            time_from = time_to - datetime.timedelta(days=1)
+        if time_interval is None:
+            time_interval = 'PT5M'  # PT1H, PT8H work.
+
         """Returns the history of a value from a device."""
-        # result = self.make_request('GET', API_ENDPOINT + '/devices/{device_id}/history[?valuename][&from][&to][&interval]')
-        raise NotImplementedError()
+        params = {'valuename': valuename,
+                  'from': time_from.strftime(TIME_FORMAT),
+                  'to': time_to.strftime(TIME_FORMAT),
+                  'interval': time_interval}
+        result = await self.make_request('GET', API_ENDPOINT + f'/devices/{device_id}/history/', params=params)
+        return result
 
     async def get_weather_data(self, device_id: str):
         """Returns current weather data."""
@@ -145,21 +156,20 @@ class ZehnderCloud:
         result = await self.make_request(
             "PUT",
             API_ENDPOINT
-            + "/devices/{device_id}/{device_type}/settings".format(
-                device_id=device_id,
-                device_type=device_type,
-            ),
+            + f"/devices/{device_id}/{device_type}/settings",
             settings,
         )
 
         return result
 
-    async def make_request(self, method: str, endpoint: str, body=None):
+    async def make_request(self, method: str, endpoint: str, body=None, params=None):
+        if params is None:
+            params = {}
         """Make a request."""
         if body:
-            _LOGGER.debug("Sending %s to %s: %s", method, endpoint, body)
+            _LOGGER.debug(f"Sending %s to %s - body: {body}, params: {params}", method, endpoint, body, params)
         else:
-            _LOGGER.debug("Sending %s to %s", method, endpoint)
+            _LOGGER.debug(f"Sending %s to %s - params: {params}", method, endpoint)
 
         try:
             token = await self._auth.async_get_access_token()
@@ -172,7 +182,7 @@ class ZehnderCloud:
         }
 
         async with self.session.request(
-            method, endpoint, headers=headers, json=body
+            method, endpoint, headers=headers, json=body, params=params,
         ) as response:
             _LOGGER.debug("Response status: %s", response.status)
             _LOGGER.debug("Response body: %s", await response.json())

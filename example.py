@@ -69,6 +69,10 @@ async def main():
         # Get device details
         device = await api.get_device_details(devices[0])
         print(device)
+
+        device = await api.get_device_history(devices[0], valuename='runningMeanOutdoorTemparature')
+        print(device)
+
         pass
         # # Set ventilation speed to away
         # await api.set_device_settings(
