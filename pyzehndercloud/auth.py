@@ -76,6 +76,7 @@ class InteractiveAuth(AbstractAuth):
                 self.logger.info("Proceed with account: %s" % chosen["username"])
             # Now let's try to find a token in cache for this account
             result = self.app.acquire_token_silent([OAUTH2_CLIENT_ID], account=chosen)
+            token = result['access_token']
 
         if not result:
             result = self.app.acquire_token_interactive(
@@ -89,4 +90,5 @@ class InteractiveAuth(AbstractAuth):
                 # by using the preferred_username claim from returned id_token_claims.
                 timeout=30,
             )
-        return result['id_token']
+            token = result['id_token']
+        return token
