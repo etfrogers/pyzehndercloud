@@ -1,11 +1,10 @@
 import atexit
+import logging
 import os
 from abc import ABC, abstractmethod
 
 import msal
 from aiohttp import ClientSession
-
-from example import logger
 
 TENANT = 'zehndergroupauth'
 POLICY = 'B2C_1_signin_signup_enduser'
@@ -26,10 +25,11 @@ class AuthError(Exception):
 class AbstractAuth(ABC):
     """Abstract class to make authenticated requests."""
 
-    def __init__(self, websession: ClientSession, api_key: str):
+    def __init__(self, websession: ClientSession, api_key: str, logger: logging.Logger = None):
         """Initialize the auth."""
         self.websession = websession
         self.api_key = api_key
+        self.logger = logger
 
     @abstractmethod
     async def async_get_access_token(self) -> str:
@@ -64,12 +64,14 @@ class InteractiveAuth(AbstractAuth):
         accounts = self.app.get_accounts(username=self.username)
         result = None
         if accounts:
-            logger.info("Account(s) exists in cache, probably with token too. Let's try.")
-            logger.info("Account(s) already signed in:")
-            for a in accounts:
-                logger.debug(a["username"])
+            if self.logger:
+                self.logger.info("Account(s) exists in cache, probably with token too. Let's try.")
+                self.logger.info("Account(s) already signed in:")
+                for a in accounts:
+                    self.logger.debug(a["username"])
             chosen = accounts[0]  # Assuming the end user chose this one to proceed
-            logger.info("Proceed with account: %s" % chosen["username"])
+            if self.logger:
+                self.logger.info("Proceed with account: %s" % chosen["username"])
             # Now let's try to find a token in cache for this account
             result = self.app.acquire_token_silent([OAUTH2_CLIENT_ID], account=chosen)
 
