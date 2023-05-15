@@ -42,9 +42,12 @@ class DeviceState:
         """Initialize the device state."""
         self.data = data
 
-    def value(self, name):
+    def value(self, name: str):
         """Return a property by name."""
-        return self.data["values"].get(name)
+        val = self.data["values"].get(name)
+        if name.endswith('Temp'):
+            val /= 10
+        return val
 
     def __getitem__(self, item):
         return self.value(item)
