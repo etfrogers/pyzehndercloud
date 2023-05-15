@@ -31,6 +31,9 @@ class DeviceDetails:
         """Return a property by name."""
         return self._properties.get(name)
 
+    def __getitem__(self, item):
+        return self.property(item)
+
 
 class DeviceState:
     """Represents the state of a device."""
@@ -42,6 +45,9 @@ class DeviceState:
     def value(self, name):
         """Return a property by name."""
         return self.data["values"].get(name)
+
+    def __getitem__(self, item):
+        return self.value(item)
 
 
 class ZehnderCloud:
