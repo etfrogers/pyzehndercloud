@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 
 import aiohttp
@@ -11,9 +10,6 @@ from pyzehndercloud.auth import AbstractAuth
 _LOGGER = logging.getLogger(__name__)
 
 API_ENDPOINT = "https://zehnder-prod-we-apim.azure-api.net/cloud/api/v2.1"
-with open("api_key.json", "r") as f:
-    API_KEY = json.load(f)
-
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 
 
@@ -179,7 +175,7 @@ class ZehnderCloud:
 
         headers = {
             "Authorization": "Bearer " + token,
-            "x-api-key": API_KEY,
+            "x-api-key": self._auth.api_key,
         }
 
         async with self.session.request(

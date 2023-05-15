@@ -21,9 +21,10 @@ class AuthError(Exception):
 class AbstractAuth(ABC):
     """Abstract class to make authenticated requests."""
 
-    def __init__(self, websession: ClientSession):
+    def __init__(self, websession: ClientSession, api_key: str):
         """Initialize the auth."""
         self.websession = websession
+        self.api_key = api_key
 
     @abstractmethod
     async def async_get_access_token(self) -> str:

@@ -1,5 +1,6 @@
 import asyncio
 import atexit
+import json
 import logging
 import os
 import sys
@@ -12,17 +13,15 @@ from pyzehndercloud.auth import OAUTH2_CLIENT_ID, AbstractAuth, OAUTH2_AUTHORITY
 from pyzehndercloud.zehndercloud import ZehnderCloud
 
 logging.basicConfig(level=logging.DEBUG)
-
-
-config = {'zehnder': {'username': 'etfrogers@hotmail.com'}}
 logger = logging.getLogger('Zehnder')
 
 
 class InteractiveAuth(AbstractAuth):
     """This is an example implementation of the AbstractAuth class."""
 
-    def __init__(self, websession: ClientSession):
-        super().__init__(websession)
+    def __init__(self, websession: ClientSession, api_key: str, username: str):
+        super().__init__(websession, api_key)
+        self.username = username
         cache = msal.SerializableTokenCache()
         if os.path.exists("my_cache.json"):
             cache.deserialize(open("my_cache.json", "r").read())
@@ -42,7 +41,7 @@ class InteractiveAuth(AbstractAuth):
         Note that this is an example, you probably want to cache the access_token, and only refresh it when it
         expires.
         """
-        accounts = self.app.get_accounts(username=config.get("username"))
+        accounts = self.app.get_accounts(username=self.username)
         result = None
         if accounts:
             logger.info("Account(s) exists in cache, probably with token too. Let's try.")
@@ -70,9 +69,11 @@ class InteractiveAuth(AbstractAuth):
 
 
 async def main():
+    with open('config.json') as file:
+        config = json.load(file)
     async with aiohttp.ClientSession() as session:
         # Initialise ZehnderCloud API
-        api = ZehnderCloud(session, InteractiveAuth(session))
+        api = ZehnderCloud(session, InteractiveAuth(session, config['username'], config['api-key']))
 
         # Get a list of all devices
         devices = await api.get_devices()
