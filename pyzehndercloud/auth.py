@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 import msal
 from aiohttp import ClientSession
 
+CACHE_PATH = "zehnder_token_cache.json"
+
 TENANT = 'zehndergroupauth'
 POLICY = 'B2C_1_signin_signup_enduser'
 OAUTH2_AUTHORITY = f"https://{TENANT}.b2clogin.com/{TENANT}.onmicrosoft.com/{POLICY}"
@@ -43,10 +45,10 @@ class InteractiveAuth(AbstractAuth):
         super().__init__(websession, api_key)
         self.username = username
         cache = msal.SerializableTokenCache()
-        if os.path.exists("my_cache.json"):
-            cache.deserialize(open("my_cache.json", "r").read())
+        if os.path.exists(CACHE_PATH):
+            cache.deserialize(open(CACHE_PATH, "r").read())
         atexit.register(lambda:
-                        open("my_cache.json", "w").write(cache.serialize())
+                        open(CACHE_PATH, "w").write(cache.serialize())
                         # Hint: The following optional line persists only when state changed
                         if cache.has_state_changed else None
                         )
