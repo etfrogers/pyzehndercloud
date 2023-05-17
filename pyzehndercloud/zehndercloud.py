@@ -54,9 +54,10 @@ class DeviceState:
 
 
 class ZehnderCloud:
-    def __init__(self, session: aiohttp.ClientSession, auth: AbstractAuth):
+    def __init__(self, session: aiohttp.ClientSession, auth: AbstractAuth, verify_ssl: bool = True):
         self.session = session
         self._auth = auth
+        self.verify_ssl = verify_ssl
 
     async def activate_scene(self, building_id: str, scene_id: str):
         """Activate a scene."""
@@ -189,6 +190,7 @@ class ZehnderCloud:
 
         async with self.session.request(
             method, endpoint, headers=headers, json=body, params=params,
+            verify_ssl=self.verify_ssl
         ) as response:
             _LOGGER.debug("Response status: %s", response.status)
             _LOGGER.debug("Response body: %s", await response.json())

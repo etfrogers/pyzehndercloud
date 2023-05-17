@@ -65,6 +65,7 @@ class InteractiveAuth(AbstractAuth):
         """
         accounts = self.app.get_accounts(username=self.username)
         result = None
+        token = None
         if accounts:
             if self.logger:
                 self.logger.info("Account(s) exists in cache, probably with token too. Let's try.")
