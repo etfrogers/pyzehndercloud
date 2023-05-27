@@ -13,6 +13,10 @@ API_ENDPOINT = "https://zehnder-prod-we-apim.azure-api.net/cloud/api/v2.1"
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S%z'
 
 
+class ZehnderAPIError(Exception):
+    pass
+
+
 class DeviceDetails:
     """Represents the state of a device."""
 
@@ -195,8 +199,13 @@ class ZehnderCloud:
             _LOGGER.debug("Response status: %s", response.status)
             _LOGGER.debug("Response body: %s", await response.json())
 
+            json_data = await response.json()
             if response.status == 401:
-                message = await response.json()
-                raise AuthError(message["message"])
+                raise AuthError(json_data["message"])
+            elif response.status != 200:
+                errors = json_data['errors']
+                message = '\n'.join([f'{key}: {message}' for key, message in errors.items()])
+                _LOGGER.debug(message)
+                raise ZehnderAPIError(message)
 
-            return await response.json()
+            return json_data
